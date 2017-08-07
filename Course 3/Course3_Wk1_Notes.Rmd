@@ -1,0 +1,169 @@
+---
+title: "Untitled"
+author: "Arends"
+date: "July 10, 2017"
+output: html_document
+---
+
+
+```{r}
+getwd()
+
+if (!file.exists("data")) { file.create("data") }
+file.exists("./data")
+
+fileURL <- "https://data.baltimorecity.gov/api/views/aqgr-xx9h/rows.csv?accessType=DOWNLOAD"
+download.file(fileURL, destfile = "C:/Users/marends/Documents/Course Trainings/John Hopkins Data Science Boot Camp/JHU Working Directory/cameras.csv")
+        ## For windows, need to have "C:/xyz/..." format
+list.files("C:/Users/marends/Documents/Course Trainings/John Hopkins Data Science Boot Camp/JHU Working Directory")
+
+dateDownloaded <- date()
+dateDownloaded
+
+cameraData <- read.table("cameras.csv", sep = ",", header = TRUE)
+head(cameraData)
+## when reading in with a csv, default sep = ",", and header = TRUE
+
+getwd()
+
+q1 <- "https://d396qusza40orc.cloudfront.net/getdata%2Fdata%2Fss06hid.csv"
+download.file(q1, destfile = "C:/Users/marends/Documents/Course Trainings/John Hopkins Data Science Boot Camp/Course 3/survey.csv")
+read.csv(q1)
+prop_val <- read.csv(q1)
+prop_val
+prop_val_100000 <- filter(prop_val, VAL == 24, !is.na(VAL))
+prop_val_100000
+p1 <- select(prop_val_100000, VAL)
+p1
+nrow(p1)
+
+## Downloading version
+
+fileXLSX <- "https://data.baltimorecity.gov/api/views/aqgr-xx9h/rows.csv?accessType=DOWNLOAD&bom=true&format=true"
+download.file(fileXLSX, destfile = "C:/Users/marends/Documents/Course Trainings/John Hopkins Data Science Boot Camp/JHU Working Directory/cameras2.xlsx")
+list.files("C:/Users/marends/Documents/Course Trainings/John Hopkins Data Science Boot Camp/JHU Working Directory")
+downloadedDate2 <- date()
+
+
+cameraData2 <- read.csv("cameras2.xlsx")
+
+
+## For downloading xlsx files:
+
+install.packages("readxl")
+library(readxl)
+
+file_URL <- "https://d396qusza40orc.cloudfront.net/getdata%2Fdata%2FDATA.gov_NGAP.xlsx"
+download.file(file_URL, destfile = "C:/Users/marends/Documents/Course Trainings/John Hopkins Data Science Boot Camp/JHU Working Directory/naturalgas.xlsx", mode = 'wb')
+
+
+dat <- read_xlsx("C:/Users/marends/Documents/Course Trainings/John Hopkins Data Science Boot Camp/JHU Working Directory/naturalgas.xlsx", range = "NGAP Sample Data!G18:O23", col_names = TRUE)
+
+## site for pdf: https://cran.r-project.org/web/packages/readxl/readxl.pdf 
+
+dat
+
+sum(dat$Zip*dat$Ext,na.rm=T)
+```
+
+
+Extracting XML:
+
+Tags - corresponds to lables so it is structured
+- Start Tags: <section>
+- End Tags: </section>
+- Empty Tags: <line break/>
+
+Elements are specific examples of tags:
+- <Greeting> Hello, World </Greeting>
+
+Attributes are components of the label:
+- <img src="jeff.jpg" alt="instructor"/>
+
+```{r}
+install.packages("XML")
+library(XML)
+
+file3URL <- "http://www.espn.com/mlb/team/_/name/bal/baltimore-orioles"
+doc <- htmlTreeParse(file3URL, useInternal = TRUE)
+scores <- xpathSApply(doc,"//li[@class='score']",xmlValue)
+## xpathSAPPLY extract values inside certain elements
+## ex: looking for list items and check class "score"
+teams <- xpathSApply(doc, "//li[@class='team-name']", xmlValue)
+scores
+
+
+## First example in presentation
+rootNode <- xmlRoot(doc) ##rootNode is the wrapper for all of the file (everything else is nested in it)
+xmlName(rootNode)
+
+rootNode[[1]] ## accesses first food element
+
+xmlSApply(rootNode, xmlValue) ## it will pull out all tags in the document 
+
+## XPath - a way to dig into the XML and pull out specific things, it is a new language so will need to learn it.
+
+
+file_XML <- "https://d396qusza40orc.cloudfront.net/getdata%2Fdata%2Frestaurants.xml" 
+bal_rest <- xmlTreeParse(sub("s", "", file_XML), useInternal = TRUE)
+bal_rest
+zip_codes <- xpathSApply(bal_rest, "//div[@class='zipcode']", xmlValue)
+answer4 <- length(xpathApply(bal_rest, "//zipcode[text()='21231']", xmlValue)) ## gives the number of restaurants with zip code 21231
+answer4
+
+
+```
+
+
+Extracting JSON
+
+Common format is API
+
+Data stored as 
+- Numbers
+- Strings
+- Boolean (T or F)
+- Array (ordered, comma separated enclosed)
+- Object (unordered, comma sep collected)
+
+```{r}
+install.packages("jsonlite")
+library(jsonlite)
+jsonData <- fromJSON("https://api.github.com/users/jtleek/repos")
+names(jsonData)
+
+names(jsonData$owner)
+
+## http://www.json.org
+
+
+
+```
+
+
+data.table package
+
+```{r}
+library(data.table)
+DF = data.frame(x=rnorm(9), y=rep(c("a","b","c"), each=3), z=rnorm(9))
+
+head(DF, 3)
+
+DT = data.table(x=rnorm(9), y=rep(c("a","b","c"), each=3), z=rnorm(9))
+head(DT, 3)
+tables()
+DT[2,]
+DT[DT$y=="a",]
+
+
+DT[, list(mean(x), sum(z))] ## passing functions through a list
+
+DT[,w:=z^2] ## adds new column ":="
+
+DT[,m:= {tmp <- (x+z); log2(tmp+5)}] ## assigns (x+z) to the variable tmp and then takes the log based 2 of tmp + 5
+        ## example of multi step operations
+
+
+
+```
+

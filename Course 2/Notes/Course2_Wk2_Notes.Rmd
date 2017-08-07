@@ -1,0 +1,313 @@
+Course 2 Wk 2 Notes
+
+
+Control Commands - for writing R program and function
+if else
+for
+while
+repeat - execuite infitinte loop
+next
+return
+
+```{r}
+# if else or just if
+
+if(x > 4){
+  y <- 40
+} else {
+  y <- 10
+}
+
+```
+
+```{r}
+# for loop 
+
+# i is a loop index that will cover a series of numbers
+for(i in 1:10){
+  print (i)
+}
+
+# seq_along takes vector as input and creates integer sequence 1 through 4
+x <- c("a", "b", "c", "d")
+for(i in 1:4){
+  print(x[i])
+}
+
+## is the same as:
+
+for(i in seq_along(x)){
+  print(x[i])
+}
+
+for(letter in x){
+  print(letter)
+}
+
+## for a nested for loop to loop over columns and rows
+x <- matrix(1:6, 2, 3)
+for(i in seq_len(nrow(x))){ ## seq_len takes integer and creates an integer sequence out of that, in this case 1 through 2
+  for(j in seq_len(ncol(x))){ ##
+    print(x[i, j])
+  }
+}
+
+## CAUTION: Going beyond 2-3 levels is often difficult to reaf/understand with nested functions
+```
+
+
+```{r}
+## while loop
+  # begin by testing a condition, if true they execute the loop body. Once the body is executed, the condition is tested again, and so forth
+
+#takes logical expression
+count <- 0
+while(count < 10){
+  print(count)
+  count <- count + 1
+}
+# This particular expression counts to ten and stops executing when the expression reaches the condition and in this case the loop willl stop when values reach 10 or more
+
+#Caution: be careful bc it may never stop based on condition
+
+
+z <- 5
+while(z >= 3 && z <= 10){
+  print(z)
+  coin <- rbinom(1, 1, 0.5) #rbinom(n, size, prob)
+  
+  if(coin == 1){## random walk
+    z <- z + 1
+  }else{
+      z <- z - 1
+    }
+}
+?rbinom
+# condition will stop executing when z either hits 3 or 10.
+# conditions are always evaluated left to right
+```
+
+
+```{r}
+## repeat - initiates an infitie loop - not too common; only way to exit the loop is to call break
+
+x0 <- 1
+tol <- le-8 #refers to the tolerance of the equation
+repeat{
+  x1 <- computeEstimate() # computeEstimate is not a function!
+  if(abs(x1 - x0) < tol){ # if the absolute value of the new value of x is less than the difference of my tolerance, then the loop will stop. If difference is greater, then I set x value to a new value and run the function again
+    break
+  } else {
+    x0 <- x1
+  }
+}
+
+# great for optimization
+
+# However, there is no guarantee the loop will stop
+```
+
+
+```{r}
+## next - used when you want to skip an iteration
+for(i in 1:100){
+  if(i <= 20){
+    next(
+    )
+  }
+  ## do something here - this is where the body of the code goes
+}
+```
+
+
+```{r}
+## First Function:
+add2 <- function(x, y){
+  x + y
+}
+add2(3, 5)
+
+above10 <- function(x){
+  ## which elements of x are greater than 10
+  use <- x > 10
+  x[use] #returns subset of x that are bigger than 10
+}
+
+above <- function(x, n){ # can set a default value by doing n = 10
+  use <- x > n ## user can set arbitrary number whereas function above the number is 10
+  x[use]
+}
+x <- 1:20
+above(x, 12) ## 12 is the arbitrary number
+```
+
+
+```{r}
+#Second Function - loop through a matrix to take mean at each column
+
+columnmean <- function(x, removeNA = TRUE){ # x is a matrix
+  nc <- ncol(x) # figure out how many columns there is
+  means <- numeric(nc) # need to initilize the vector, must have the same number of values as the columns
+  for(i in 1:nc){ # creates integer vector
+    means[i] <- mean(x[,i], na.rm = removeNA) #assign to means vector the mean of x 
+  }
+    means
+}
+columnmean(airquality) ## if I didn't have the removeNA = TRUE, the first two columns wouldf have returned NA
+#if vector has NA you cant take mean
+```
+
+
+Functions Part 1
+
+Functions in R are "first class objects"
+  You can treat a function like any other object in R which means you can pass functions or nest functions
+  
+  Thw return value is the last expression in the function
+  
+na.rm tells the function whther or not to include NA values
+when you name the arguments, you don't have to have them in any specific order
+
+Can be exact, partially or positionally matched
+
+```{r}
+args(lm)
+## lm doesn't have default for first five, then the default is used for the rest
+
+## useful in the command line
+```
+
+
+Functions Part 2
+```{r}
+## ... argument is used when extending a previous function so you don't have to write the whole thing again. It will absorb the other functions and pass them down to the new function so you don't have to reconstruct the old function
+
+  # Cannot partial or positionally match after the "..." is used
+args(paste)
+
+args(cat)
+
+```
+
+
+Bind Values
+
+R has to find a value to a function. To bind, it searches through environments. It will first search global environment which is your workspace meaning what you have loaded into R. 
+  - The search list can be found using the "search" function
+```{r}
+search()
+## in these areas, R will try and find the value in one of these environments. 
+
+#The order of the packages for search matters!
+
+#When using "library", the namespace of that package gets put into the second position right behind the global environment
+
+```
+
+
+Scoping Rules
+- Determine how a value is bound to a free variable
+    - R uses lexical scoping: related to how R uses search list to bind values to functions
+    - Used to determine how we assign values to free variables
+
+Environment is a collection of pairs - a symbol and a value
+  - every environment has a parent environment
+  - 
+Search for a free variable:
+- if value of a symbol is not found in the environemtn the function was defined, then the search continues to the parent environment. The search will go down this path until the value is found in any one of the parent environments. It will keep going until the search reaches the empty environment by which an error is returned. 
+
+Why does this matter?
+- In R, you can have functions defined inside another function
+```{r}
+make.power <- function(n){ ## n is a free variable because it is not defined in the pow function - this is defining a function within a function
+  pow <- function(x){
+    x^n
+  }
+  pow
+}
+
+cube <- make.power(3)
+square <- make.power(2)
+## by defining the function this way, you make it versatile.
+ls(environment(cube))
+
+
+```
+
+
+Optimization:
+- optim
+- nlm
+- optimize
+These require you to pass a function whose argument is a vector of parameters.
+It may be preferable to fix certain parameters 
+
+```{r}
+## This creates a negative log likelihood - if they are designed to be maximized, you need to use negative log-likelihood
+
+make.NegLogLik <- function(data, fixed=c(FALSE,FALSE)){
+  params <- fixed ## logical vector that lets me fit parameters
+  function(p){ # this is parameter vector that I will optimize over - it will return log likelihood for normal distribution
+    params[!fixed] <- p 
+    mu <- params[1] ## mean of normal dist
+    sigma <- params[2] # sd of normal dist
+    a <- -0.5*length(data)*log(2*pi*sigma^2)
+    b <- -0.5*sum((data-mu)^2/(sigma^2))
+    -(a + b)
+  }
+}
+set.seed(1); normals <- rnorm(100, 1, 2) ## simulate random normal variables
+nLL <- make.NegLogLik(normals)
+nLL
+## if you look at this function, most values are from the local environment; however there is one free variable. data, params, and fixed are all free variables
+
+optim(c(mu = 0, sigma = 1), nLL)$par
+
+## optimize() is used when there is one variable
+
+## Plotting:
+
+nLL <- make.NegLogLik(normals, c(1, FALSE))
+x <- seq(1.7, 1.9, len = 100) ## 1.7 and 1.9 are the parameters for the plot
+y <- sapply(x, nLL)
+plot(x, exp(-(y - min(y))), type = "l")
+```
+
+
+```{r}
+f <- function(x) {
+        g <- function(y) {
+                y + z
+        }
+        z <- 4
+        x + g(x)
+}
+z <- 10
+f(3)
+
+
+
+x <- 5
+y <- if(x < 3) {
+        NA
+} else {
+        10
+}
+y
+
+
+h <- function(x, y = NULL, d = 3L) {
+        z <- cbind(x, d)
+        if(!is.null(y))
+                z <- z + y
+        else
+                z <- z + f
+        g <- x + y / z
+        if(d == 3L)
+                return(g)
+        g <- g + 10
+        g
+}
+ls(environment(h))
+```
+

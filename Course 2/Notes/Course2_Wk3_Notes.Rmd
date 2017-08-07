@@ -1,0 +1,229 @@
+Course 2 Wk 3 - Loop commands
+
+lapply - loop over a list and evaluate a function on element
+        - split is often used in conjuction with lapply
+
+```{r}
+lapply
+## you will take this list of things and you want to apply a function to each element of the list and the function will return something for every single value in a new list. Always return a list
+
+x <- list(a = 1.5, b= rnorm(10))
+lapply(x, mean)
+##All this is doing is taking the mean for each value of a and b
+## This returned a list of length 2
+
+x <- 1:4
+lapply(x, runif) ## runif generates uniform random variables using random number generator.
+        # 1st element will be 1 uniform random variable all the way down to four
+
+lapply(x, runif, min = 0, max = 10)
+# this returns random numbers only between 0 and 10
+
+
+# Anonymous functions don't have a name
+x <- list(a = matrix(1:4, 2, 2), b = matrix(1:6, 3, 2))
+x ## goal is to extract first column of each matrix
+lapply(x, function(elt) elt[,1]) # the function doesn't exist except with the lapply function here. 
+```
+
+
+
+
+sapply: tries to simplify the result of lapply if possible
+        It will return a vector instead of a list like lapply
+        
+- If the result is a list where every element is length 1, then a vector is returned
+- If the result is a list where every element is a vector of the same length (> 1), a matrix is returned
+- If it can't figure things out, a list is returned
+
+```{r}
+sapply(x, mean)
+returns a vector of length two
+
+```
+
+
+apply function
+
+- used to evaluate a function over the margins of an array (matrix is an example of an array)
+        - most often used to apply a function to the rows or columns of a         matrix
+        - it can be used with general arrays
+        - it is not really fatser than writing a loop
+        - It invovles less typing
+```{r}
+str(apply)
+# x is an array
+# margin is an integer vector indicating which margins should be retained
+# FUN is a function to be applied
+# ... is for other arguments to be passed to FUN
+
+x <- matrix(rnorm(200, 20, 10))
+apply(x, 2, mean)
+# returns vector of length ten that has the mean of each column
+# dimension 1 has 20 rows and dimension 2 has 10 columns
+        # "2" eliminates the first dimension but keeps the second dimension (the 10 columns) so this preserves the columns and collapses the rows and returns a vector of length 10. You could do it so that it collapses the coloumns and preserves the rows. 
+
+## Col/row sums and means shortcuts ##
+        # rowSums = apply(x, 1, sum)
+        # rowMeans = apply(x, 1, mean)
+        # colSums = apply(x, 2, sum)
+        # colMeans = apply(x, 2, mean)
+
+# Calculate the 25 and 75 percentile of the matrix
+apply(x, 1, quantile, probs = c(0.25, 0.75))
+# this function preserves the rows
+# quantile has no default function so you have to pass it the probs
+# this function calculates the 25 and 75th percentile of each row
+
+a <- array(rnorm(2 * 2 * 10), c(2, 2, 10))
+apply(a, c(1,2), mean)
+        # take average of the two x two matrices
+        # preserves 1st and 2nd dimensions but collapses the third.
+rowMeans(a, dim = 2)
+## dim = 2 because this is a 2 x 2 matrix
+
+```
+
+
+mapply - multivariate funtion - applies a function in parallel over a set of arguments
+
+Takes a multiple list and applies function over all lists
+
+```{r}
+str(mapply)
+# FUN is a function to apply - number of arguments has to contain as the least the number of lists you are passing to - with 3 lists, pass three objects which means 3 arguments
+# ... contains arguments to apply over
+# MoreArgs
+# SIMPLIFY
+
+list(rep(1, 4), rep(2, 3), rep(3,2), rep(4,1))
+
+# instead we can do:
+
+mapply(rep, 1:4, 4:1)
+
+# used to apply a function to multiple lists 
+
+noise <- function(n ,mean, sd){
+        rnorm(n, mean, sd)
+}
+noise(5, 1, 2)
+
+# instead:
+
+mapply(noise, 1:5, 1:5, 2)
+## vectorizes a function
+
+```
+
+
+tapply:
+used to apply a function over subsets of a vector - summarizes pieces of a vector
+
+```{r}
+str(tapply)
+# X: a vector
+# INDEX: is a factor or a list of factors
+# FUN: function to be applied
+# ... contains other arguments to be passed
+# simplify: should we simplify the results?
+
+x <- c(rnorm(10), runif(10), rnorm(10, 1)) # simulated vector of normal (rnorm) and uniform (runif) random variables. "rnorm(10, 1)" is 10 normal random variables all with a mean of 1
+f <- gl(3, 10) ## gl creates a factor variable - 10 1's, 10 2's and 10 3's
+f
+
+
+tapply(x, f, mean) ## this allows you to take the mean of each group (in this example there are three)
+
+tapply(x, f, mean, simplify = FALSE)
+
+tapply(x, f, range)
+
+```
+
+split:
+- takes a vector or other objects and splits it into groups determined by a factor or list of factors
+
+```{r}
+str(split)
+# x is a vector (or list) or data frame
+# f is a factor or a list of factors
+# drop indicates where empty factors levels should be dropped
+
+# if f has three levels, split will split x into three groups and then you can use sapply or tapply to pass the function to these newly created groups
+
+x <- c(rnorm(10), runif(10), rnorm(10, 1)) # simulated vector of normal (rnorm) and uniform (runif) random variables. "rnorm(10, 1)" is 10 normal random variables all with a mean of 1
+f <- gl(3, 10) ## gl creates a factor variable - 10 1's, 10 2's and 10 3's
+split(x, f)
+
+# always returns a list back
+
+lapply(split(x, f), mean)
+## tapply does the same exact thing as this
+
+
+
+library(datasets)
+head(airquality)
+
+## calculate mean within each month
+s <- split(airquality, airquality$Month)
+lapply(s, function(x) colMeans(x[, c("Ozone", "Solar.R", "Wind")]))
+## takes column means for each monthly data frame
+## lapply returns a list back of vector length 3
+## Ozone values NA bc there are missing values
+
+sapply(s, function(x) colMeans(x[, c("Ozone", "Solar.R", "Wind")]))
+## returns a matrix instead of a list
+
+sapply(s, function(x) colMeans(x[, c("Ozone", "Solar.R", "Wind")], na.rm = TRUE))
+## na.rm = TRUE skips over the NA values
+
+?gl
+
+x <- rnorm(10)
+f1 <- gl(2, 5)
+f2 <- gl(5, 2)
+interaction(f1, f2)
+## total of 10 levels
+
+str(split(x, list(f1, f2), drop = TRUE))
+
+## drop will drop the empty levels then you will be returned a list that only have observations in them
+```
+
+
+```{r}
+library(datasets)
+data(iris)
+?iris
+
+mean(iris$Sepal.Length[virginica])
+head(iris)
+sapply(iris$Species, unique)
+
+lapply(iris$Sepal.length, iris$species[virginica], mean)
+round(mean(iris[which(iris$Species == "virginica"),]$Sepal.Length)) 
+## the mean of 'Sepal.Length' for the species virginica
+
+
+
+apply(iris[,1:4], 2, mean)
+##  returns a vector of the means of the variables 'Sepal.Length', 'Sepal.Width', 'Petal.Length', and 'Petal.Width'
+
+
+library(datasets)
+data(mtcars)
+sapply(split(mtcars$mpg, mtcars$cyl), mean)
+## calculates the average miles per gallon (mpg) by number of cylinders in the car.
+
+new <- tapply(mtcars$hp, mtcars$cyl, mean)
+round(abs(new[3]-new[1]))
+new
+## calculates the absolute difference between the average horsepower of 4-cylinder cars and the average horsepower of 8-cylinder cars
+
+debug(ls)
+
+```
+
+

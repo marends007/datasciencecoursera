@@ -1,0 +1,121 @@
+Course 3 Wk 2
+
+Reading mySQL
+
+Free and widley used open source
+Data STructured in databaes, tables, etc...
+
+Common ids:
+Example - what departments employees are in.
+
+```{r}
+install.packages("RMySQL")
+library(RMySQL)
+
+mysql --user=genome --host=genome-mysql.soe.ucsc.edu -A
+
+## loading a mySQL database in R:
+ucscDb <- dbConnect(MySQL(), user="genome",
+                    host="genome-mysql.cse.ucsc.edu")
+result <- dbGetQuery(ucscDb, "show databases;"); dbDisconnect(ucscDb);
+## shows all databases within the mysql server in this host server
+
+hg19 <- dbConnect(MySQL(), user="genome", db="hg19",
+                  host="genome-mysql.cse.ucsc.edu") ## hg19 is a particular build of the human genome. We are going to pass the user to the database to see what tables are in the database to see all the different data frames. In this one, there are over 10,000 tables. mySQL can store a lot of info
+allTables <- dbListTables(hg19)##each table corresponds to a different part
+length(allTables)
+
+dbListFields(hg19, "affyU133Plus2")
+
+## to find how many rows: in quotes, pass a mysql command - going to count all the records and return them
+dbGetQuery(hg19, "select count(*) from affyU133Plus2")
+
+
+## Next thing is to get data out of data frame
+## dbReadTable is the command to get the data out of the server
+affyData <-dbReadTable(hg19, "affyU133Plus2")
+head(affyData)
+
+## To select a subset of data:
+query <- dbSendQuery(hg19, "select * from affyU133Plus2 where misMatches between 1 and 3")
+## Stored in database and now use fetch command
+affyMis <- fetch(query); quantile(affyMis$misMatches)
+
+## You can just fetch a small amount of data:
+affyMisSmall <- fetch(query, n=10); dbClearResult(query);
+## Every time you fetch for new data, you need to use dbClearResult to erase that first query
+
+dim(affyMisSmall)
+
+## MUST DISCONNECT WHEN DONE:
+dbDisconnect(hg19)
+
+```
+
+HDF5
+
+Used for storing large data sets
+Support storing a range of data types
+Hierarchical data format
+groups containing zero or more data sets
+
+```{r}
+source("http://bioconductor.org/biocLite.R")
+biocLite("rhdf5")
+library(rhdf5)
+created = h5createFile("example.h5")
+created
+## this installs packages from Biconductor which is based on genomics 
+
+## creating groups inside the file
+created = h5createGroup("example.h5", "foo")
+h5read ##used to read the dataset
+
+```
+
+
+Webscraping
+
+- all websites have info that you can programmaticlly read. 
+- In some cases, this is against the terms of service so be careful
+
+```{r}
+con = url("https://scholar.google.com/citations?user=HI-I6C0AAAAJ")
+htmlCode = readLines(con) ## you can set the number of lines
+close(con)
+htmlCode
+
+library(XML)
+url <- "http://scholar.google.com/citations?user=HI-I6C0AAAAJ"
+html <- htmlTreeParse(url, useInternalNodes = T)
+
+xpathSApply(html, "//title", xmlValue)
+
+##Another way to scrape web pages
+library(httr); html2 = GET(url)
+content2 = content(html2, as="text")
+parsedHtml = htmlParse(content2, asText=TRUE)
+xpathSApply(parsedHtml, "//title", xmlValue)
+
+
+## Websites with passwords:
+
+pg2 = GET("http://httpbin.org/basic-auth/user/passwd",
+          authenticate("user", "passwd"))
+pg2
+## Status = 200 which means we got access, Status 401 means we were blocked
+names(pg2)
+
+
+## Using Handles
+## make sure to use handles because then you can access/save authentification to website. You can tell GET to get that handle for a specific path ot a different path. If you set handles, the cookies will stay with that site.
+google = handle("http://google.com")
+pg1 = GET(handle=google, path="/")
+pg2 = GET(handle = google, path="search")
+
+## Great resource for webscraping is r bloggers!!!
+
+
+
+```
+

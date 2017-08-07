@@ -1,0 +1,279 @@
+What is R?
+
+S is a langauage developed in 1976. In 1988 the system was rewritten in 
+C and begins to resemble today stuff. Code was then rewritten again in 1998 and resembles the code we use today. R is thing of S.
+
+Fundamentals of S language have not changed much since 1998
+
+R was created in 1991. R can only be modified by those in the core group
+
+Syntax is very similar to S. Semantics are superficially similar to S
+
+Smart way to ask help:
+"R 3.0.2 lm() function on Windows -- seg fault on large data frame"
+
+Five atomic classes of objects:
+1. Character
+2. Numeric - numbers
+3. Integer - 1L gives you an integer instead of numeric 
+4. Complex
+5. Logical
+Inf = infinity
+NaN - Not a Number, can also be thought of as a missing value
+
+Vector must contain objects of same class
+"list" is the execption and can contain objects of different classes
+
+Attributes:
+- Names, dimnames
+- dimensions
+- class
+- length
+- other user-defined attributes/metadata
+can be accesssed using attributes()
+
+Cancatinating:
+x <- c(1, 2)
+Using vector():
+y <- vector(numeric, 1:10)
+
+Vector Coercion:
+y <- c("a", TRUE) ## character
+y <- c(TRUE, 2) ## numeric
+```{r}
+# Course 2, Wk 1 HW #
+
+y <- c(2, T)
+y
+class(y)
+
+ x <- c(1,3, 5) 
+ y <- c(3, 2, 10)
+ rbind(x, y)
+
+
+x <- list(2, "a", "b", TRUE)
+x[[1]]
+
+
+x <- c(3, 5, 1, 10, 12, 6)
+x[x %in% 1:5] <- 0
+x[x<6] <- 0
+## these set all numbers less than 6 = 0
+
+
+colnames(hw1_data)
+hw1_data[c(1,2),]
+hw1_data[c(152, 153),]
+hw1_data[47,1]
+
+miss <- is.na(hw1_data[, "Ozone"])  ## A vector of TRUE/FALSE
+sum(miss)
+
+
+mean(na.omit(hw1_data$Ozone)) ##takes mean w/o NA values
+
+
+
+nrow(hw1_data)
+
+new.Ozone <- hw1_data$Ozone[hw1_data$Ozone>31]
+new.Ozone
+
+new_hw1 <- subset(hw1_data, Ozone > 31 & Temp > 90)
+mean(new_hw1$Solar.R)
+## Takes mean when Ozone > 31 and Temp is > 90
+
+tapply(hw1_data$Temp, hw1_data$Month, mean, na.rm = TRUE)
+## takes mean Temp by each month
+tapply(hw1_data$Ozone, hw1_data$Month, max, na.rm = TRUE)
+### Takes maximum ozone value by each month
+```
+
+Need to be careful about what type of coercion you will get
+
+Converting:
+x <- 0:6
+class(x)
+"integer"
+as.numeric(x)
+as.logical(x) ## FALSE T T T T T T bc 0=False & 0< = True
+
+as.complex
+
+## List
+x <- list(1, "a", TRUE, 1 + 4i)
+x
+[[1]]
+[1] 1
+
+[[2]]
+[1] "a"
+
+Etc...
+Elements of the list will have double brackets
+
+## Matrices
+
+```{r}
+m <- matrix(1:6, nrow = 2, ncol = 3)
+m
+
+m1 <- 1:10
+m1
+dim(m1) <- c(2, 5)
+m1
+```
+
+##Cbind and Rbind:
+```{r}
+x <- 1:3
+y <- 10:12
+cbind(x, y)
+```
+
+## Factors - represents categorical data:
+unordered (male/female) or ordered (ranked such as associate, assistant, etc)
+
+treated by lm() and glm()
+Factors are self-describing
+  Coding for label is built-in
+
+```{r}
+x <- factor(c("yes", "no", "yes"))
+x
+table(x)
+unclass(x) ##brings it down to integer vector
+
+```
+The order of the levels can be set using "levels" argument to facctor()
+```{r}
+x <- factor(c("yes", "no", "yes"),
+            levels = c("yes", "no")
+```
+
+## Missing Values
+
+is.na used to test objects if they are NA
+is.nan used to test for NaN
+
+NA values can have class
+BUT NaN is considered to be NA but NA value is not necessarily an NaN value
+
+## Data Frames
+
+used to store tabular data - make up a lot of what we use in statistics
+
+data frames are represented as a special type of list
+  each column has to be same length but not same type
+  Have special attribute called "row.names"
+  created using "read.table()" OR "read.csv"
+  Can be converted to matrix using data.matrix()
+      Need to be careful with coercion here
+
+```{r}
+x <- data.frame(foo = 1:4, bar = c(T, F, T, T))
+x
+```
+
+## Names:
+
+```{r}
+x <- 1:3
+names(x) <- c("foo", "bar", "north")
+x
+```
+
+dimnames() passes names to list
+
+
+## Reading Tabular Data:
+
+read.table()
+read.csv()
+    These function read text files and return a data frame in R
+  
+readLines for reading lines of a text file
+source for reading in R code files
+dget for reading in R code files
+
+read.table:
+   - file
+   - header: logical indicating if the file has a header line
+   - sep: string indicates how columns are separated
+   - colClasses: char vector indicating class of coulmn
+   - nrows: number of rows in the dataset
+   - comment.char: indicated comment charachter
+   - skip: number of lines to skip from beginning
+   - stringsAsFactors - should character variables be coded as            factors? Default is TRUE
+
+## Textual Data Formats
+
+dump()
+
+dput() - use dget to read in the data
+These Preseve the metadata
+
+
+## Subsetting
+[] - returns object of same class as the original, if you subset a list, a list will be returned. Can be used to select more than one element
+
+[[]] - used to extract elements of a list or data frame - can only be used to extract a single element
+
+```{r}
+x <- c("a", "b", "c", "abc")
+x[1]
+
+x[x>"a"]
+
+u <- x > "a" ##subset to see which elements are greater than "a"
+u
+
+```
+
+## Subsetting lists
+
+```{r}
+x <- list(foo = 1:4, bar = 0.5)
+x[1]
+x[[1]]
+
+x$bar
+
+x["bar"] ## list with element bracket in it
+
+x[c(1, 2)] ## extracting multiple elements
+
+x <- list(a = list(10, 12, 14), b = c(3, 5))
+x[[c(1, 3)]]
+##extracts the third element of the first list
+```
+
+
+## Subsetting: Removing NA values
+
+```{r}
+x <- c(1, 2, NA, 4, NA, 5, NA, 7, 8, NA)
+bad <- is.na(x)
+bad
+x[!bad] ## pulls out which ones aren't NA
+
+y <- c(NA, "a", NA, "b", NA, "c", NA, NA, NA, NA)
+good <- complete.cases(x, y) ## will put out only variables from both that are not NA - will match and substitute out all missing variables
+good
+x[good]
+y[good]
+
+```
+
+
+
+```{r}
+install.packages("swirl")
+library(swirl)
+
+install_from_swirl("R Programming")
+swirl()
+
+
+```

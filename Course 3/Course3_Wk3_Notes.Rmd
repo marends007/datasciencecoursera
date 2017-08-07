@@ -1,0 +1,465 @@
+
+Subsetting:
+
+```{r}
+set.seed(12344)
+x <- data.frame("var1"=sample(1:5), "var2"=sample(6:10), "var3"=sample(11:15))
+## create data frame with three variables 
+x <- x[sample(1:5),]; x$var2[c(1,3)] = NA
+## scramble up the values so they are not in the same order and some are equal to NA
+x
+
+x[,1] ##subsetting columns
+x[,"var1"] ## can subset out just a column of var1
+x[1:2, "var2"] ## subsetting both rows and columns
+
+##subsetting using logical statements:
+x[(x$var1 <= 3 & x$var3 > 11),]
+
+## Dealing with NA values
+x[which(x$var2 > 8),] ## using "which" returns the request without returning NA's
+
+sort(x$var1) ## can sort in descending or ascending
+
+x[order(x$var1),] # sort these by increasing order so in this case passing the order so that "var1" is sorted in order
+
+x[order(x$var1, x$var2),] ## first arranges data frame by var1 and then by var2
+
+## Can use plyr package to do the same command:
+library(plyr)
+arrange(x, var1) ## takes data frame and tells variable to sort
+arrange(x, desc(var1)) ## increasing order is default
+
+## adding rows and columns
+x$var4 <- rnorm(5)
+x ## adds variable to dataset
+
+y <- cbind(x, rnorm(5)) ## binds column to right side of x
+## to combine rows, use rbind
+
+
+```
+
+
+SUmmarizing Data
+
+```{r}
+if(!file.exists("./data")){dir.create("./data")}
+fileURL <- "https://data.baltimorecity.gov/api/views/k5ry-ef3g/rows.csv?accessType=DOWNLOAD"
+download.file(fileURL, destfile = "./data/restaurants.csv")
+restData <- read.csv("./data/restaurants.csv")
+
+
+head(restData, n=20)
+summary(restData)
+str(restData) ## tells class of data frame and dimensions and tells all different classes the columns correspond to
+
+quantile(restData$councilDistrict, na.rm = TRUE) 
+quantile(restData$councilDistrict,probs=c(0.5, 0.75, 0.9)) 
+table(restData$zipCode, useNA = "ifany")
+## shows where most of the zip codes lie
+
+table(restData$councilDistrict, restData$zipCode)
+
+## checking for missing values:
+sum(is.na(restData$councilDistrict)) ## will return the number of NA if any exist
+any(is.na(restData$councilDistrict)) ## any command will look through this set of values to see if any of the values are equal to NA in this case
+all(restData$zipCode > 0) ## all will check and see if every single value satifies a condition
+
+colSums(is.na(restData)) ## taking sum of the sum columns to see if there are any NA values
+
+table(restData$zipCode %in% c("21212")) ## Find how zip codes equal to c(" ")
+
+table(restData$zipCode %in% c("21212", "21213")) ## %in% lets you see if there are any zip codes in either of the two specified values
+
+restData[restData$zipCode %in% c("21212", "21213"),]
+## logical variable to subset only those rows/columns that contain the zip code 21212 and 21213
+
+
+```
+
+
+Cross tabs
+```{r}
+data(UCBAdmissions)
+DF = as.data.frame(UCBAdmissions) ## create a data frame from the data
+summary(DF)
+
+## Cross tabs - identify any relationships between variables
+xt <- xtabs(Freq ~ Gender + Admit, data=DF)
+xt
+
+warpbreaks$replicate <- rep(1:9, len = 54)
+## do cross tabs for a larger number of variables
+xxt <- xtabs(breaks ~.,data=warpbreaks)
+## has values that appear = to breaks
+## can break it down by three different variables so you have to make three different tables
+xxt
+
+## making flat tables
+ftable(xxt)
+
+## to size size of the data:
+fakeData = rnorm(1e5)
+object.size(fakeData)
+print(object.size(fakeData), units="Mb")
+
+
+```
+
+
+Creating New Variables:
+
+Why create new variables?
+        Often times raw data doesn't have a value you are looking for
+        You will need to transform data to get the values you would like
+        Usually you will add those values to the data frames you are working with
+        Common variables to create:
+                Missingness indicators (missing data)
+                Cutting up quantitative variables (factor variables)
+                Applying transforms (deal with data that have strange distributions)
+                
+```{r}
+## Creating Sequences: Used to create indexes for your data set
+
+#First Way:
+s1 <- seq(1, 10, b=10); s1 ## min, max, by how many values
+
+# Second Way:
+s2 <- seq(1, 10, length=3); s2 ## returns exactly three values
+
+# Third Way:
+x <- c(1,3,8,25,100); seq(along = x) ## vector with five values and you want to create an index to loop over all five values
+
+## Creating a variable to indicate which subset it comes from:
+restData$nearMe = restData$neighborhood %in% c("Roland", "Homeland")
+table(restData$nearMe)
+
+## find out if zip code is wrong using ifelse
+restData$zipWrong = ifelse(restData$zipCode < 0, TRUE, FALSE)
+## if the zip code is less than zero, we think it must be wrong. For this case, if the zip code is < 0, it will return TRUE
+table(restData$zipWrong, restData$zipCode < 0)
+
+## Creating Categorical Variables
+restData$zipGroups = cut(restData$zipCode, breaks=quantile(restData$zipCode))
+## breaks the variabel zip code based on the qunatiles (0 <-> 25%, 25% <-> 50%, +...)
+table(restData$zipGroups)
+table(restData$zipGroups, restData$zipCode)
+
+## easier way to do it:
+library(Hmisc)
+restData$zipGroups = cut2(restData$zipCode, g=4) ## g=4 means breaking it up by four quantiles
+## cutting produces factor variables
+table(restData$zipGroups)
+## This actually grabs the zip code quantiles which makes it easier to read
+
+library(plyr)
+
+## Creat new data frame while cutting it
+restData2 = mutate(restData, zipGroups=cut2(zipCode, g=4)) ##apply mutate to old data frame
+table(restData2$zipGroups)
+## new data frame will be old data frame with new variables added
+
+## Creating factor variables:
+restData$zcf <- factor(restData$zipCode)
+restData$zcf[1:10]
+
+## Common Transformations:
+abs(x) #absolute value
+sqrt(x)
+ceiling(x) ## ceiling(3.45) is 4
+floor(x) ## floor(3.45) is 3
+round(x, digits = n)
+cos(x), sin(x), etc.,
+log(x)
+log2(x), log10(x)
+exp(x) #exponentiating x
+
+
+
+
+
+```
+
+
+
+Reshaping Data!!
+
+
+```{r}
+library(reshape)
+head(mtcars)
+install.packages("reshape2")
+library(reshape2)
+
+mtcars$carname <- rownames(mtcars)
+carMelt <- melt(mtcars, id=c("carname", "gear", "cyl"), measure.vars = c("mpg", "hp")) ## pass thedataframe that we have to this melt function and tell it which variables are id and which are measure variables (dimensions vs. measure as in tableau) - variable values are hp and mpg
+head(carMelt, n=3)
+
+## reformatting: Use "dcast"
+cylData <- dcast(carMelt, cyl ~ variable) ## dcast function will recast data set into a partiocular data frame. This shows cyl broken down by different variables (in this case hp and mpg). This also summarizes the dataset
+cylData
+
+cylData <- dcast(carMelt, cyl ~ variable, mean) ## here we are telling it to take the mean of each variable 
+cylData
+
+
+## Averaging values:
+head(InsectSprays)
+tapply(InsectSprays$count, InsectSprays$spray, sum) ## takes sum of count of each sprays. So take insect count variable and pass it tapply to count along the index spray and sum that
+
+## Another way to do this is by split:
+spIns = split(InsectSprays$count, InsectSprays$spray) ## reutns a list of the values for spray A, B, etc. then you can apply the list:
+
+spIns
+sprCount = lapply(spIns, sum) ## returns a list
+sprCount
+
+unlist(sprCount)
+## unlists
+library(plyr)
+## Another way to do it through plyr package:
+ddply(InsectSprays,.(spray), summarize, sum=sum(count))
+## .,(spray) designates which variable we want to use
+## then we want to summarize and how? by sum of the count variable
+
+## You can do this and apply it to each variable:
+spraySums <- ddply(InsectSprays,.(spray),summarize,sum=ave(count, FUN=sum))
+head(spraySums) ## subtract off mean count from total count. pass ddply to Insect data frame variable spray and summarize and here applying the sum function through ave to count so every time I see an A variable, I see the sum for A every time I see an A
+
+```
+
+
+
+Dplyr package verbs:
+
+select - return subset of the columns of a data frame
+Filter - extract a subset of rows from a data frame based on logical conditions
+arrange - reorder rows of a data frame 
+mutate - add new variables/columns or transform existing variables
+rename - rename variables in a data frame
+summaraize - generate summary statistics of different variables in the data frame, possible within strata
+
+simplifies a lot of the operation in plyr
+
+dplyr properties:
+1. data frame
+2. subsequent arguments you describe what to do with it, and you can refer to columns in the data frame directly without the $ operator
+3. result is a new data frame
+
+```{r}
+install.packages("dplyr")
+library(dplyr)
+install.packages("gamair")
+if(!file.exists("./data")){dir.create("./data")}
+fileURL <- "https://github.com/DataScienceSpecialization/courses/blob/master/03_GettingData/dplyr/chicago.rds?raw=true"
+download.file(fileURL, destfile = "./data/chicago.rds")
+chicago <- readRDS("chicago.rds")
+data(chicago)
+
+names(mtcars)
+head(select(mtcars, mpg:hp))
+## the above allows you to only see those columns called out: mpg:hp
+
+head(select(mtcars, -(mpg:hp)))
+## grabs all columns except those specified above; -(x:y)
+
+chic.f <- filter(mtcars, hp > 200)
+chic.f
+## this grabs only those rows that have hp > 200
+
+## Can do the above with a logical sequence (more complicated)
+chic.f2 <- filter(mtcars, hp > 200 & mpg > 14)
+chic.f2
+
+
+
+### ARRANGE!!
+
+mtcars <- arrange(mtcars, hp)
+mtcars
+## data set arranged according to hp in ascending order
+
+mtcars <- arrange(mtcars, desc(hp))
+mtcars
+## arranges data set according to hp in descending order
+
+## Rename variable
+mtcars <- rename(mtcars, weight = wt)
+                        #("new" = "old")
+
+## Mutate function
+## used to transform or create new variables
+
+## group by function
+mtcarsFAST <- mutate(mtcars, mpgFast = factor(1 * (hp > 200), labels = c("slow", "fast"))
+)
+fast_slow <- group_by(mtcarsFAST, mpgFast)
+fast_slow
+summarize(fast_slow, hp = mean(hp), disp = mean(disp))
+## summarizes the levels of the "fast" "slow" variables
+## if there are NA values, use na.rm = TRUE
+
+## chain operations together
+## pipeline of operations
+
+mtcars %>% mutate()
+%>% ## allows you to keep from assigning variables
+
+```
+
+
+Merging Data
+```{r}
+fileUrl1 = "https://dl.dropboxusercontent.com/u/7710864/data/reviews-apr29.csv"
+fileUrl2 = "https://dl.dropboxusercontent.com/u/7710864/data/solutions-apr29.csv"
+download.file(fileUrl1, destfile = "./data/reviews.csv")
+download.file(fileUrl2, destfile = "./data/solutions.csv")
+reviews = read.csv("./data/reviews.csv"); solutions <- read.csv("./data/solutions.csv")
+head(reviews, 2)
+## col_name "solution_id" refers to the id in the "solutions" dataset
+head(solutions, 2)
+
+names(reviews); names(solutions)
+## To merge data frame:
+# important parameters: x,y,by,by.x,by.y,all (tell which columns to merge by)
+# merge by common variable numbers
+
+## tell merge which variabel to merge on:
+mergeData = merge(reviews, solutions, by.x="solution_id", by.y="id", all = TRUE)
+head(mergeData)
+## merged data sets based on common column names
+intersect(names(solutions), names(reviews))
+## intersect tells you which column names the data sets have in common so if we use merge and not specify which columns to merge, it will merge all columns that have the name name
+mergeData2 = merge(reviews, solutions, all=TRUE)
+head(mergeData2)
+## start and stop time wont necessarily match up so it applies a larger data frame
+
+df1 = data.frame(id=sample(1:10), x=rnorm(10))
+df2 = data.frame(id=sample(1:10), y=rnorm(10))
+arrange(join(df1, df2), id)
+## nice thing about plyr package is because if you have multiple date frames it is hard to do it with the merge command, but if you have common ids, then merge is a good function to use
+
+library(swirl)
+
+```
+```{r}
+# Question Number 1
+
+fileUrl1 = "https://d396qusza40orc.cloudfront.net/getdata%2Fdata%2Fss06hid.csv"
+download.file(fileUrl1, destfile = "./data/ACS.csv")
+households_acres = read.csv("./data/ACS.csv")
+
+head(households_acres)
+names(households_acres)
+select(households_acres, head("ACR"))
+
+## "with" function creates a logical vector - first tried with select, but that does not create a logical vector that can be read by the "which" function. 
+agriculture_logical <- with(households_acres, ACR == 3 & AGS == 6)
+## another options is: agriculture_logical <- households_acres$ACR == 3 & households_acres$AGS == 6
+select(agriculture_logical, head("ACR", "AGS"))
+
+which(agriculture_logical)[1:3]
+## Returns the first three values. 
+
+## Question #2 
+install.packages("jpeg")
+library(jpeg)
+fileJpeg <- "https://d396qusza40orc.cloudfront.net/getdata%2Fjeff.jpg"
+download.file(fileJpeg, destfile = "./data/picture", mode = "wb") ## necessary to have the "wb" in the function. Did not get correct answer when I tried using it without. 
+
+jpeg_quiz <- readJPEG("./data/picture", native = TRUE)
+
+?quantile
+quantile(jpeg_quiz, probs = c(0.3, 0.8)) ## 0.3 refers to the 30th quantile and 0.8 refers to 80th quantile
+
+## Question #3
+fileGDP <- "https://d396qusza40orc.cloudfront.net/getdata%2Fdata%2FGDP.csv"
+fileEdu <- "https://d396qusza40orc.cloudfront.net/getdata%2Fdata%2FEDSTATS_Country.csv"
+download.file(fileGDP, destfile = "./data/GDP")
+download.file(fileEdu, destfile = "./data/Edu")
+country_GDP <- read.csv("./data/GDP", skip = 5, nrows = 190, stringsAsFactors = FALSE, header = FALSE)
+country_Edu <- read.csv("./data/Edu", stringsAsFactors = FALSE, header = FALSE)
+
+names(country_GDP)
+names(country_Edu)
+head(country_GDP)
+head(country_Edu)
+
+## Subset only the data/columns needed - rename columns in GDP and convert GDP value to numeric
+country_GDP <- country_GDP[X != ""]
+country_GDP <- country_GDP[, list(X, X.1, X.3, X.4)]
+## Rename:
+setnames(country_GDP, c("X", "X.1", "X.3", "X.4"), c("CountryCode", "Rank", "Country.Name", "GDP.Value"))
+country_GDP$GDP.Value <- as.numeric(gsub(",","", country_GDP$GDP.Value))
+
+
+
+mergedData <- merge(country_GDP, country_Edu, all = TRUE, by = c("CountryCode"))
+mergedData 
+sum(!is.na(unique(mergedData$Rank)))
+desec <- arrange(mergedData, desc(Rank))
+head(desec)
+th <- desec[13, ]
+th
+## St Kitts and Nevis
+
+
+## Question 4
+## Could not get the right answer because it would return NA and NaN. Need to figure out why!!!
+OECD <- filter(mergedData, Income.Group == "High income: OECD") ## this worked, but it is still returning NA values. Need to figure out why.
+mean(OECD$Rank) 
+head(OECD)
+
+
+
+## Question 5
+library(Hmisc)
+## Cut Ranks into 5 groups and store as factor variable
+mergedData$Rank.Groups = cut2(mergedData$Rank, g = 5)
+## Cut is used to create groups and g = 5 specifies 5 groups
+## Build a table of Income Groups across Rank Groups
+table(mergedData$Income.Group, mergedData$Rank.Groups)
+## For some reason, my code is taking the first quantile as [2, 40) when it should be [1, 39). Need to figure out why it is doing this.
+
+
+```
+QUIZ 
+
+1. The American Community Survey distributes downloadable data about United States communities. Download the 2006 microdata survey about housing for the state of Idaho using download.file() from here:
+
+https://d396qusza40orc.cloudfront.net/getdata%2Fdata%2Fss06hid.csv
+
+and load the data into R. The code book, describing the variable names is here:
+
+https://d396qusza40orc.cloudfront.net/getdata%2Fdata%2FPUMSDataDict06.pdf
+
+Create a logical vector that identifies the households on greater than 10 acres who sold more than $10,000 worth of agriculture products. Assign that logical vector to the variable agricultureLogical. Apply the which() function like this to identify the rows of the data frame where the logical vector is TRUE.
+
+which(agricultureLogical)
+
+What are the first 3 values that result?
+
+2. Using the jpeg package read in the following picture of your instructor into R
+
+https://d396qusza40orc.cloudfront.net/getdata%2Fjeff.jpg
+
+Use the parameter native=TRUE. What are the 30th and 80th quantiles of the resulting data? (some Linux systems may produce an answer 638 different for the 30th quantile)
+
+
+3. Load the Gross Domestic Product data for the 190 ranked countries in this data set:
+
+https://d396qusza40orc.cloudfront.net/getdata%2Fdata%2FGDP.csv
+
+Load the educational data from this data set:
+
+https://d396qusza40orc.cloudfront.net/getdata%2Fdata%2FEDSTATS_Country.csv
+
+Match the data based on the country shortcode. How many of the IDs match? Sort the data frame in descending order by GDP rank (so United States is last). What is the 13th country in the resulting data frame?
+
+
+QUESTION 4. What is the average GDP ranking for the "High income: OECD" and "High income: nonOECD" group?
+
+
+
+5. Cut the GDP ranking into 5 separate quantile groups. Make a table versus Income.Group. How many countries are Lower middle income but among the 38 nations with highest GDP?
