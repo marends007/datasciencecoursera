@@ -1,0 +1,72 @@
+```{r}
+list.files("./data/UCI-HAR/UCI HAR Dataset")
+
+unzip(zipfile="./data/Data.zip",exdir="./data")
+
+x.test <- read.table("./data/UCI-HAR/UCI HAR Dataset/test/X_test.txt")
+x.train <- read.table("./data/UCI-HAR/UCI HAR Dataset/train/X_train.txt")
+x <- rbind(x.train, x.test)
+head(x, 20)
+
+subject.train <- read.table("./data/UCI-HAR/UCI HAR Dataset/train/subject_train.txt")
+subject.test <- read.table("./data/UCI-HAR/UCI HAR Dataset/test/subject_test.txt")
+subject <- rbind(subject.train, subject.test)
+head(subject, 20)
+
+y.test <- read.table("./data/UCI-HAR/UCI HAR Dataset/test/y_test.txt")
+y.train <- read.table("./data/UCI-HAR/UCI HAR Dataset/train/y_train.txt")
+y <- rbind(y.train, y.test)
+
+features <- read.table("./data/UCI-HAR/UCI HAR Dataset/features.txt")
+head(features)
+?grep
+## Eliminate text at the end of the names in features
+mean.sd <- grep("-mean\\(\\)|-std\\(\\)", features[, 2])
+head(mean.sd)
+x.mean.sd <- x[, mean.sd]
+head(x.mean.sd)
+
+names(x.mean.sd) <- features[mean.sd, 2]
+names(x.mean.sd)
+names(x.mean.sd) <- tolower(names(x.mean.sd)) 
+## Eliminates trailing and leading ( ) 
+names(x.mean.sd) <- gsub("\\(|\\)", "", names(x.mean.sd))
+
+activities <- read.table("./data/UCI-HAR/UCI HAR Dataset/activity_labels.txt")
+head(activities)
+str(activities)
+## Change from activity names from factor variable to character variable and make lower case:
+activities[, 2] <- tolower(as.character(activities[, 2]))
+head(activities)
+## Sub out "_" with space using gsub:
+activities[, 2] <- gsub("_", "", activities[, 2])
+
+
+head(y)
+y[, 1] = activities[y[, 1], 2]
+colnames(y) <- 'activity'
+y
+head(subject)
+colnames(subject) <- 'subject'
+?colnames
+
+
+mergeColumns <- cbind(subject, x.mean.sd, y)
+mergeColumns
+str(mergeColumns)
+?write.table
+write.table(mergeColumns, "./data/UCI-HAR/UCI HAR Dataset/merged.txt", row.names = F)
+
+
+# Creates a second, independent tidy data set with the average of each variable for each activity and each subject. 
+?aggregate
+tidy.data <- aggregate(x=mergeColumns, by=list(activities=mergeColumns$activity, subj=mergeColumns$subject), FUN=mean)
+tidy.data <- tidy.data[, !(colnames(tidy.data) %in% c("subject", "activity"))]
+str(tidy.data)
+head(tidy.data)
+write.table(tidy.data, "./data/UCI-HAR/UCI HAR Dataset/tidyData.txt", row.names = F)
+
+
+
+```
+
